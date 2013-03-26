@@ -1,0 +1,97 @@
+﻿<!doctype html>
+<html lang="en">
+    <head>
+        <title>GanttPad</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1" >
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/datepicker.css">
+        <link rel="stylesheet" href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css">
+    </head>
+    <body>
+		<div class="container">
+
+			<h1>
+				GanttPad
+				<small>テキストでガントチャートを作成できます。内容は自動保存されます。</small>
+			</h1>
+			<form class="form-inline">
+			<input id="taskName" type="text" placeholder="タスク名" class="span4">
+			<input id="startDate" type="text" placeholder="開始日" class="span3">～<input id="endDate" type="text" placeholder="終了日" class="span3">
+			<button type="button" id="addEvent" class="btn btn-primary">タスク追加</button>
+			</form>
+			<textarea id="textsrc" cols="50" rows="10" style="width: 920px">作業１ 2012/01/01 2012/01/05
+作業２ 2012/01/10 2012/01/30
+作業３ 2012/02/10 2012/02/17</textarea>
+			<div class="gantt"></div>
+			<button type="button" id="deleteStorage" class="btn btn-warning">ローカルのデータを削除（localstorage）</button>
+			<hr>
+			<p>by <a href="https://github.com/181dev">181dev</a>, with <a href="https://github.com/robicch/jQueryGantt">jQuery.Gantt</a></p>
+		</div>
+    </body>
+	<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+	<script src="js/bootstrap-datepicker.js"></script>
+	<script src="js/jquery.fn.gantt.js"></script>
+	<script src="js/dateutil.js"></script>
+	<script src="js/bindWithDelay.js"></script>
+    <script>
+		var src = [];
+
+		function toData(){
+			src = [];
+			var textsrc = $("#textsrc").val();
+			localStorage["GanttPad"] = textsrc;
+			var arr = textsrc.split(/\r\n|\r|\n/);
+			for (i = 0; i < arr.length; i++) {
+				var line = jQuery.trim(arr[i]);
+				var arg = line.split(" ");
+				if(arg.length > 2){
+					var start = dateutil.parse( arg[1] );
+					var end = dateutil.parse( arg[2] );
+					var item = {name: arg[0], values:[{from: "/Date(" + start.getTime() +")/", to: "/Date(" + end.getTime()+")/", label: arg[0]}] };
+					src.push(item);
+				}
+			}
+			updateGantt();
+		}
+		
+		function updateGantt(){
+			$(".gantt").gantt({
+				source: src,
+				navigate: "scroll",
+				scale: "days",
+				maxScale: "months",
+				minScale: "days",
+				months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+				dow: ["日", "月", "火", "水", "木", "金", "土"],
+				itemsPerPage: 20
+			});
+		}
+
+		$(function() {
+			var saved = localStorage["GanttPad"];
+			if(saved && saved.length > 0){
+				$("#textsrc").val(saved);
+			}
+
+			$('#startDate').datepicker({format: 'yyyy/mm/dd'});
+			$('#endDate').datepicker({format: 'yyyy/mm/dd'});
+			$('#addEvent').on("click", function(){
+				var tf = $("#textsrc");
+				var str = tf.val();
+				tf.val(str + "\n" + $('#taskName').val() + " " + $('#startDate').val() + " " + $('#endDate').val())
+				toData();
+			});
+			$("#textsrc").bindWithDelay("keyup", function(){
+				toData();
+			},1000);
+			
+			toData();
+			
+			$("#deleteStorage").on("click", function(){
+				delete localStorage['GanttPad'];
+				alert("保存されたデータを削除しました。");
+			});
+		});
+    </script>
+</html>
