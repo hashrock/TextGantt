@@ -4,26 +4,58 @@
         <title>GanttPad</title>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1" >
+		<link href='http://fonts.googleapis.com/css?family=Cinzel:900' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/datepicker.css">
         <link rel="stylesheet" href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css">
+		<style>
+			.jumbotron {
+			  position: relative;
+			  padding: 40px 0;
+			  color: #fff;
+			  text-align: center;
+			  text-shadow: 0 1px 3px rgba(0,0,0,.4), 0 0 30px rgba(0,0,0,.075);
+			  background: #020031; /* Old browsers */
+			  background: -moz-linear-gradient(45deg,  #020031 0%, #6d3353 100%); /* FF3.6+ */
+			  background: -webkit-gradient(linear, left bottom, right top, color-stop(0%,#020031), color-stop(100%,#6d3353)); /* Chrome,Safari4+ */
+			  background: -webkit-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* Chrome10+,Safari5.1+ */
+			  background: -o-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* Opera 11.10+ */
+			  background: -ms-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* IE10+ */
+			  background: linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* W3C */
+			  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#020031', endColorstr='#6d3353',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+			  -webkit-box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
+			     -moz-box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
+			          box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
+			}
+			.jumbotron h1 {
+				font-size: 50px;
+				font-family: 'Cinzel', serif;
+				font-weight: bold;
+				letter-spacing: -1px;
+				line-height: 1;
+			}		
+		</style>
     </head>
     <body>
-		<div class="container">
-
+		<div class="jumbotron">
 			<h1>
 				GanttPad
-				<small>テキストでガントチャートを作成できます。内容は自動保存されます。</small>
 			</h1>
-			<form class="form-inline">
-			<input id="taskName" type="text" placeholder="タスク名" class="span4">
-			<input id="startDate" type="text" placeholder="開始日" class="span3">～<input id="endDate" type="text" placeholder="終了日" class="span3">
-			<button type="button" id="addEvent" class="btn btn-primary">タスク追加</button>
-			</form>
-			<textarea id="textsrc" cols="50" rows="10" style="width: 920px">作業１ 2012/01/01 2012/01/05
-作業２ 2012/01/10 2012/01/30
-作業３ 2012/02/10 2012/02/17</textarea>
+			<p>テキストでガントチャートを作成できます。内容は自動保存されます。</p>
+		</div>
+		<div class="container">
 			<div class="gantt"></div>
+			<form class="form-inline" style="text-align: center;">
+				<input type="checkbox" id="showControl" checked="checked"><label for="showControl">コントロールを表示</label>
+			</form>
+			<form class="form-inline" style="text-align: center;">
+				<input id="taskName" type="text" placeholder="タスク名" class="span4">
+				<input id="startDate" type="text" placeholder="開始日" class="span2">～<input id="endDate" type="text" placeholder="終了日" class="span2">
+				<button type="button" id="addEvent" class="btn btn-primary">タスク追加</button>
+			</form>
+			<textarea id="textsrc" cols="50" rows="20" style="width: 920px">作業１ 2013/01/01 2013/01/05
+作業２ 2013/01/10 2013/01/30
+作業３ 2013/01/20 2013/01/27</textarea>
 			<button type="button" id="deleteStorage" class="btn btn-warning">ローカルのデータを削除（localstorage）</button>
 			<hr>
 			<p>by <a href="https://github.com/181dev">181dev</a>, with <a href="https://github.com/taitems/jQuery.Gantt">jQuery.Gantt</a></p>
@@ -34,8 +66,22 @@
 	<script src="js/jquery.fn.gantt.js"></script>
 	<script src="js/dateutil.js"></script>
 	<script src="js/bindWithDelay.js"></script>
+	<script src="js/jquery-fieldselection.js"></script>
+
     <script>
 		var src = [];
+
+		function parseLine(line){
+			line = jQuery.trim(line);
+			//Supports tab-separated row for Excel clipboard
+			line = line.replace(/\t/g, " ");
+			var arg = line.split(" ");
+			if(arg.length > 2){
+				return arg;
+			}else{
+				return null;
+			}
+		}
 
 		function toData(){
 			src = [];
@@ -43,9 +89,8 @@
 			localStorage["GanttPad"] = textsrc;
 			var arr = textsrc.split(/\r\n|\r|\n/);
 			for (i = 0; i < arr.length; i++) {
-				var line = jQuery.trim(arr[i]);
-				var arg = line.split(" ");
-				if(arg.length > 2){
+				var arg = parseLine(arr[i]);
+				if(arg){
 					var start = dateutil.parse( arg[1] );
 					var end = dateutil.parse( arg[2] );
 					var item = {name: arg[0], values:[{from: "/Date(" + start.getTime() +")/", to: "/Date(" + end.getTime()+")/", label: arg[0]}] };
@@ -67,6 +112,30 @@
 				itemsPerPage: 20
 			});
 		}
+		
+		function current_line(textarea) {
+		  var $ta = $(textarea),
+		      pos = $ta.getSelection().start, // fieldselection jQuery plugin
+		      taval = $ta.val(),
+		      start = taval.lastIndexOf('\n', pos - 1) + 1,
+		      end = taval.indexOf('\n', pos);
+
+		  if (end == -1) {
+		      end = taval.length;
+		  }
+
+		  return taval.substr(start, end - start);
+		}
+
+		function toForm(str){
+			var arg = parseLine(str);
+			if(arg){
+				$("#taskName").val(arg[0]);
+				$("#startDate").val(arg[1]);
+				$("#endDate").val(arg[2]);
+			}
+		}
+
 
 		$(function() {
 			var saved = localStorage["GanttPad"];
@@ -74,18 +143,38 @@
 				$("#textsrc").val(saved);
 			}
 
+			$("#showControl").on("change", function(){
+				if($(this).attr('checked')){
+					$(".bottom").css("display", "block");
+				}else{
+					$(".bottom").css("display", "none");
+				}
+			});
+
 			$('#startDate').datepicker({format: 'yyyy/mm/dd'});
 			$('#endDate').datepicker({format: 'yyyy/mm/dd'});
 			$('#addEvent').on("click", function(){
 				var tf = $("#textsrc");
 				var str = tf.val();
-				tf.val(str + "\n" + $('#taskName').val() + " " + $('#startDate').val() + " " + $('#endDate').val())
+				var taskName = $('#taskName').val();
+				if( !taskName || jQuery.trim(taskName).length == 0 ){
+					taskName = "新規タスク";
+				}
+				var startDate = $('#startDate').val();
+				var endDate = $('#endDate').val();
+				tf.val(str + "\n" + taskName + " " + startDate + " " + endDate)
 				toData();
 			});
+
 			$("#textsrc").bindWithDelay("keyup", function(){
 				toData();
 			},1000);
-			
+
+			$("#textsrc").bindWithDelay("keyup click", function(){
+				var line = current_line($("#textsrc")[0]);
+				toForm(line);
+			},100);
+
 			toData();
 			
 			$("#deleteStorage").on("click", function(){
