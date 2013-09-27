@@ -7,7 +7,8 @@
 		<link href='http://fonts.googleapis.com/css?family=Cinzel:900' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/datepicker.css">
-        <link rel="stylesheet" href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css">
+        <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
+		<script src="https://togetherjs.com/togetherjs-min.js"></script>
 		<style>
 			.jumbotron {
 			  position: relative;
@@ -42,18 +43,22 @@
 				GanttPad
 			</h1>
 			<p>テキストでガントチャートを作成できます。内容は自動保存されます。</p>
+			<button class="btn btn-info" onclick="TogetherJS(this); return false;">TogetherJSで共同編集する</button>
 		</div>
 		<div class="container">
 			<div class="gantt"></div>
 			<form class="form-inline" style="text-align: center;">
 				<input type="checkbox" id="showControl" checked="checked"><label for="showControl">コントロールを表示</label>
 			</form>
-			<form class="form-inline" style="text-align: center;">
-				<input id="taskName" type="text" placeholder="タスク名" class="span4">
-				<input id="startDate" type="text" placeholder="開始日" class="span2">～<input id="endDate" type="text" placeholder="終了日" class="span2">
+
+			<form class="form-inline" role="form">
+				<input id="taskName" type="text" placeholder="タスク名">
+				<input id="startDate" type="text" placeholder="開始日">
+				～
+				<input id="endDate" type="text" placeholder="終了日">
 				<button type="button" id="addEvent" class="btn btn-primary">タスク追加</button>
 			</form>
-			<textarea id="textsrc" cols="50" rows="20" style="width: 920px">作業１ 2013/01/01 2013/01/05
+			<textarea id="textsrc" cols="50" rows="20" class="col-xs-12">作業１ 2013/01/01 2013/01/05
 作業２ 2013/01/10 2013/01/30
 作業３ 2013/01/20 2013/01/27</textarea>
 			<button type="button" id="deleteStorage" class="btn btn-warning">ローカルのデータを削除（localstorage）</button>
@@ -98,6 +103,7 @@
 				}
 			}
 			updateGantt();
+			TogetherJS.send({type: "updateGantt"});
 		}
 		
 		function updateGantt(){
@@ -181,6 +187,10 @@
 				delete localStorage['GanttPad'];
 				alert("保存されたデータを削除しました。");
 			});
+
+			TogetherJS.hub.on("updateGantt", function (msg) {
+				updateGantt();
+			});	
 		});
     </script>
 </html>
