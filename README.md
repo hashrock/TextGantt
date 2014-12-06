@@ -6,4 +6,4 @@ text2gantt editor
 Demo
 ----
 
- http://181dev.github.com/TextGantt/
+ http://hashrock.github.io/TextGantt/
